@@ -11,14 +11,8 @@ import { distanceMeters, getCurrentPosition, todayISO } from "@/lib/geo";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
-  Clock,
-  LogIn,
-  LogOut,
-  MapPin,
-  Users,
-  AlertCircle,
-  UserCheck,
+  CheckCircle2, Clock, LogIn, LogOut, MapPin, Users,
+  CalendarCheck, Wallet, TrendingUp,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -304,133 +298,102 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ============ Admin Dashboard ============
+
 function AdminDashboard() {
   const today = todayISO();
 
-  const { data: employees } = useQuery({
+  const { data: employees = 0 } = useQuery({
     queryKey: ["employees-count"],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
+      const { count } = await supabase.from("profiles").select("*", { count: "exact", head: true });
       return count ?? 0;
     },
   });
 
-  const { data: todayRecords } = useQuery({
-    queryKey: ["attendance-today-all", today],
+  const { data: shiftsCount = 0 } = useQuery({
+    queryKey: ["shifts-count"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance")
-        .select("*, profiles:profiles!attendance_user_id_fkey(full_name, email, department)")
-        .eq("date", today)
-        .order("check_in_time", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      const { count } = await supabase.from("shifts").select("*", { count: "exact", head: true });
+      return count ?? 0;
     },
   });
 
-  const present = todayRecords?.length ?? 0;
-  const late = todayRecords?.filter((r) => r.status === "late").length ?? 0;
-  const absent = Math.max(0, (employees ?? 0) - present);
+  const { data: pendingLeaves = 0 } = useQuery({
+    queryKey: ["pending-leaves-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("leave_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      return count ?? 0;
+    },
+  });
+
+  const { data: payroll = 0 } = useQuery({
+    queryKey: ["monthly-payroll"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("basic_salary");
+      return (data ?? []).reduce((s, r) => s + Number(r.basic_salary || 0), 0);
+    },
+  });
+
+  const { data: attendanceRate = 0 } = useQuery({
+    queryKey: ["attendance-rate", today],
+    queryFn: async () => {
+      const { count: total } = await supabase.from("profiles").select("*", { count: "exact", head: true });
+      const { count: present } = await supabase
+        .from("attendance").select("*", { count: "exact", head: true }).eq("date", today);
+      if (!total || total === 0) return 0;
+      return Math.round(((present ?? 0) / total) * 100);
+    },
+  });
+
+  const fmtK = (n: number) => n >= 1000 ? `${(n/1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Overview</h1>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          {new Date().toLocaleDateString(undefined, { dateStyle: "full" })}
+          Here's what's happening across your organization today.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Users} label="Total employees" value={employees ?? 0} tone="default" />
-        <StatCard
-          icon={UserCheck}
-          label="Present today"
-          value={present}
-          tone="green"
-        />
-        <StatCard icon={Clock} label="Late today" value={late} tone="amber" />
-        <StatCard icon={AlertCircle} label="Absent" value={absent} tone="red" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard icon={Users} tone="violet" value={String(employees)} label="Total Employees" trend="+12%" />
+        <MetricCard icon={Clock} tone="sky" value={String(shiftsCount)} label="Active Shifts" trend={`+${shiftsCount}`} />
+        <MetricCard icon={CalendarCheck} tone="rose" value={String(pendingLeaves)} label="Pending Leaves" trend="review" />
+        <MetricCard icon={Wallet} tone="emerald" value={`PKR ${fmtK(payroll)}`} label="Monthly Payroll" trend="+8%" />
+        <MetricCard icon={TrendingUp} tone="amber" value={`${attendanceRate}%`} label="Attendance Rate" trend="on target" />
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Today's attendance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {todayRecords && todayRecords.length > 0 ? (
-            <div className="divide-y">
-              {todayRecords.map((r) => {
-                const p = (r as { profiles?: { full_name?: string; email?: string; department?: string } }).profiles;
-                return (
-                  <div key={r.id} className="flex items-center justify-between py-3">
-                    <div>
-                      <div className="font-medium">{p?.full_name || p?.email || "Employee"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {p?.department || "—"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-muted-foreground">
-                        {r.check_in_time
-                          ? new Date(r.check_in_time).toLocaleTimeString(undefined, {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                        {" → "}
-                        {r.check_out_time
-                          ? new Date(r.check_out_time).toLocaleTimeString(undefined, {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "…"}
-                      </span>
-                      <StatusBadge status={r.status} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No check-ins yet today.</p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
+const TONES: Record<string, string> = {
+  violet: "bg-violet-100 text-violet-600",
+  sky: "bg-sky-100 text-sky-600",
+  rose: "bg-rose-100 text-rose-600",
+  emerald: "bg-emerald-100 text-emerald-600",
+  amber: "bg-amber-100 text-amber-600",
+};
+
+function MetricCard({
+  icon: Icon, tone, value, label, trend,
 }: {
-  icon: typeof Clock;
-  label: string;
-  value: number;
-  tone: "default" | "green" | "amber" | "red";
+  icon: typeof Clock; tone: keyof typeof TONES; value: string; label: string; trend: string;
 }) {
-  const toneMap = {
-    default: "bg-primary/10 text-primary",
-    green: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-    amber: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-    red: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  };
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-6">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${toneMap[tone]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+      <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${TONES[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="text-3xl font-bold tracking-tight">{value}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+      <div className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+        <TrendingUp className="h-3 w-3" /> {trend}
+      </div>
+    </div>
   );
 }
+

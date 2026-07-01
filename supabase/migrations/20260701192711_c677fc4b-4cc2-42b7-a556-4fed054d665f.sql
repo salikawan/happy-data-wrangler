@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.set_employee_id() FROM PUBLIC, anon, authenticated;
