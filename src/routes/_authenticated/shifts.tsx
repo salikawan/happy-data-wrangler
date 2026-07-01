@@ -29,7 +29,7 @@ function ShiftsPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "", start_time: "09:00", end_time: "17:00",
-    break_minutes: 60, off_days: ["Sat", "Sun"], ot_eligible: true,
+    break_minutes: 60, grace_minutes: 10, off_days: ["Sat", "Sun"], ot_eligible: true,
   });
 
   const { data: shifts = [] } = useQuery({
@@ -50,7 +50,7 @@ function ShiftsPage() {
     onSuccess: () => {
       toast.success("Shift created");
       setOpen(false);
-      setForm({ name: "", start_time: "09:00", end_time: "17:00", break_minutes: 60, off_days: ["Sat","Sun"], ot_eligible: true });
+      setForm({ name: "", start_time: "09:00", end_time: "17:00", break_minutes: 60, grace_minutes: 10, off_days: ["Sat","Sun"], ot_eligible: true });
       qc.invalidateQueries({ queryKey: ["shifts"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -90,7 +90,10 @@ function ShiftsPage() {
                 <div><Label>Start</Label><Input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} /></div>
                 <div><Label>End</Label><Input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} /></div>
               </div>
-              <div><Label>Break (minutes)</Label><Input type="number" value={form.break_minutes} onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Break (min)</Label><Input type="number" value={form.break_minutes} onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })} /></div>
+                <div><Label>Grace period (min)</Label><Input type="number" value={form.grace_minutes} onChange={(e) => setForm({ ...form, grace_minutes: Number(e.target.value) })} /></div>
+              </div>
               <div>
                 <Label>Off days</Label>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -123,7 +126,7 @@ function ShiftsPage() {
             </div>
             <div className="mt-3 text-lg font-semibold">{s.name}</div>
             <div className="text-sm text-muted-foreground">{s.start_time?.slice(0,5)} – {s.end_time?.slice(0,5)}</div>
-            <div className="mt-2 text-xs text-muted-foreground">Break: {s.break_minutes} min</div>
+            <div className="mt-2 text-xs text-muted-foreground">Break: {s.break_minutes} min · Grace: {s.grace_minutes ?? 0} min</div>
             <div className="text-xs text-muted-foreground">Off: {s.off_days?.join(", ")}</div>
             <div className="mt-3 flex justify-end">
               <Button variant="ghost" size="sm" onClick={() => del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
