@@ -70,9 +70,11 @@ export type Database = {
           allowed_lat: number | null
           allowed_lng: number | null
           allowed_radius_meters: number
+          enable_selfie: boolean
           enforce_geofence: boolean
           id: number
           late_after_time: string
+          require_checkin_selfie: boolean
           require_checkout_selfie: boolean
           updated_at: string
         }
@@ -80,9 +82,11 @@ export type Database = {
           allowed_lat?: number | null
           allowed_lng?: number | null
           allowed_radius_meters?: number
+          enable_selfie?: boolean
           enforce_geofence?: boolean
           id?: number
           late_after_time?: string
+          require_checkin_selfie?: boolean
           require_checkout_selfie?: boolean
           updated_at?: string
         }
@@ -90,10 +94,72 @@ export type Database = {
           allowed_lat?: number | null
           allowed_lng?: number | null
           allowed_radius_meters?: number
+          enable_selfie?: boolean
           enforce_geofence?: boolean
           id?: number
           late_after_time?: string
+          require_checkin_selfie?: boolean
           require_checkout_selfie?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_settings: {
+        Row: {
+          address: string | null
+          company_name: string
+          grace_minutes: number
+          id: number
+          logo_url: string | null
+          timezone: string
+          updated_at: string
+          work_end: string
+          work_start: string
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string
+          grace_minutes?: number
+          id?: number
+          logo_url?: string | null
+          timezone?: string
+          updated_at?: string
+          work_end?: string
+          work_start?: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          grace_minutes?: number
+          id?: number
+          logo_url?: string | null
+          timezone?: string
+          updated_at?: string
+          work_end?: string
+          work_start?: string
+        }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          manager_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -158,19 +224,94 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_reads: {
+        Row: {
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          audience: string
+          body: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          id: string
+          target_user_id: string | null
+          title: string
+        }
+        Insert: {
+          audience?: string
+          body?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          target_user_id?: string | null
+          title: string
+        }
+        Update: {
+          audience?: string
+          body?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          target_user_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           basic_salary: number | null
           created_at: string
           department: string | null
+          department_id: string | null
           designation: string | null
           email: string | null
           employee_id: string | null
           full_name: string
           id: string
+          joining_date: string | null
+          location_id: string | null
           phone: string | null
           salary_type: string | null
+          shift_id: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -178,13 +319,18 @@ export type Database = {
           basic_salary?: number | null
           created_at?: string
           department?: string | null
+          department_id?: string | null
           designation?: string | null
           email?: string | null
           employee_id?: string | null
           full_name?: string
           id: string
+          joining_date?: string | null
+          location_id?: string | null
           phone?: string | null
           salary_type?: string | null
+          shift_id?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -192,22 +338,50 @@ export type Database = {
           basic_salary?: number | null
           created_at?: string
           department?: string | null
+          department_id?: string | null
           designation?: string | null
           email?: string | null
           employee_id?: string | null
           full_name?: string
           id?: string
+          joining_date?: string | null
+          location_id?: string | null
           phone?: string | null
           salary_type?: string | null
+          shift_id?: string | null
+          status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shifts: {
         Row: {
           break_minutes: number
           created_at: string
           end_time: string
+          grace_minutes: number
           id: string
           name: string
           off_days: string[]
@@ -218,6 +392,7 @@ export type Database = {
           break_minutes?: number
           created_at?: string
           end_time: string
+          grace_minutes?: number
           id?: string
           name: string
           off_days?: string[]
@@ -228,6 +403,7 @@ export type Database = {
           break_minutes?: number
           created_at?: string
           end_time?: string
+          grace_minutes?: number
           id?: string
           name?: string
           off_days?: string[]
