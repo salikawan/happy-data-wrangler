@@ -11,14 +11,8 @@ import { distanceMeters, getCurrentPosition, todayISO } from "@/lib/geo";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
-  Clock,
-  LogIn,
-  LogOut,
-  MapPin,
-  Users,
-  AlertCircle,
-  UserCheck,
+  CheckCircle2, Clock, LogIn, LogOut, MapPin, Users,
+  CalendarCheck, Wallet, TrendingUp,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -304,7 +298,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ============ Admin Dashboard ============
-import { CalendarCheck, Wallet, TrendingUp } from "lucide-react";
 
 function AdminDashboard() {
   const today = todayISO();
