@@ -98,36 +98,141 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_requests: {
+        Row: {
+          created_at: string
+          from_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          status: string
+          to_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          status?: string
+          to_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          status?: string
+          to_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius_meters?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          basic_salary: number | null
           created_at: string
           department: string | null
+          designation: string | null
           email: string | null
+          employee_id: string | null
           full_name: string
           id: string
           phone: string | null
+          salary_type: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          basic_salary?: number | null
           created_at?: string
           department?: string | null
+          designation?: string | null
           email?: string | null
+          employee_id?: string | null
           full_name?: string
           id: string
           phone?: string | null
+          salary_type?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          basic_salary?: number | null
           created_at?: string
           department?: string | null
+          designation?: string | null
           email?: string | null
+          employee_id?: string | null
           full_name?: string
           id?: string
           phone?: string | null
+          salary_type?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      shifts: {
+        Row: {
+          break_minutes: number
+          created_at: string
+          end_time: string
+          id: string
+          name: string
+          off_days: string[]
+          ot_eligible: boolean
+          start_time: string
+        }
+        Insert: {
+          break_minutes?: number
+          created_at?: string
+          end_time: string
+          id?: string
+          name: string
+          off_days?: string[]
+          ot_eligible?: boolean
+          start_time: string
+        }
+        Update: {
+          break_minutes?: number
+          created_at?: string
+          end_time?: string
+          id?: string
+          name?: string
+          off_days?: string[]
+          ot_eligible?: boolean
+          start_time?: string
         }
         Relationships: []
       }
