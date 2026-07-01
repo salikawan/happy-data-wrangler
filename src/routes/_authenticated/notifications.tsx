@@ -50,15 +50,14 @@ function NotificationsPage() {
   const send = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error("Title required");
-      const payload: Record<string, unknown> = {
+      const { error } = await supabase.from("notifications").insert({
         title: title.trim(),
         body: body.trim() || null,
         audience,
         created_by: user?.id,
-      };
-      if (audience === "department") payload.department_id = departmentId || null;
-      if (audience === "user") payload.target_user_id = targetUserId || null;
-      const { error } = await supabase.from("notifications").insert(payload);
+        department_id: audience === "department" ? (departmentId || null) : null,
+        target_user_id: audience === "user" ? (targetUserId || null) : null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

@@ -39,7 +39,7 @@ export const createEmployee = createServerFn({ method: "POST" })
     if (createErr) throw new Error(createErr.message);
     const uid = created.user!.id;
 
-    const patch: Record<string, unknown> = {
+    const { error: updErr } = await supabaseAdmin.from("profiles").update({
       full_name: data.full_name,
       phone: data.phone ?? null,
       designation: data.designation ?? null,
@@ -50,10 +50,8 @@ export const createEmployee = createServerFn({ method: "POST" })
       salary_type: data.salary_type ?? "monthly",
       joining_date: data.joining_date ?? null,
       status: data.status ?? "active",
-    };
-    if (data.employee_id) patch.employee_id = data.employee_id;
-
-    const { error: updErr } = await supabaseAdmin.from("profiles").update(patch).eq("id", uid);
+      ...(data.employee_id ? { employee_id: data.employee_id } : {}),
+    }).eq("id", uid);
     if (updErr) throw new Error(updErr.message);
 
     if (data.is_admin) {
