@@ -199,6 +199,7 @@ export type Database = {
       }
       locations: {
         Row: {
+          address: string | null
           created_at: string
           id: string
           latitude: number
@@ -207,6 +208,7 @@ export type Database = {
           radius_meters: number
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
           latitude: number
@@ -215,6 +217,7 @@ export type Database = {
           radius_meters?: number
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
           latitude?: number
