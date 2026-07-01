@@ -404,3 +404,17 @@ function MetricCard({
   );
 }
 
+function QuickAction({ to, icon: Icon, label, tone }: {
+  to: string; icon: typeof Clock; label: string; tone: keyof typeof TONES;
+}) {
+  return (
+    <Link to={to} className="group rounded-2xl border bg-card p-4 shadow-sm hover:border-primary transition-colors">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${TONES[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="font-semibold group-hover:text-primary">{label}</div>
+    </Link>
+  );
+}
+
+
