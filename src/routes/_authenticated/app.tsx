@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -12,7 +12,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   CheckCircle2, Clock, LogIn, LogOut, MapPin, Users,
-  CalendarCheck, Wallet, TrendingUp,
+  CalendarCheck, Wallet, TrendingUp, UserPlus, Building2, BarChart3, Settings as SettingsIcon,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -357,6 +357,13 @@ function AdminDashboard() {
         <p className="text-sm text-muted-foreground">
           Here's what's happening across your organization today.
         </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <QuickAction to="/employees" icon={UserPlus} label="Add Employee" tone="violet" />
+        <QuickAction to="/departments" icon={Building2} label="Add Department" tone="sky" />
+        <QuickAction to="/reports" icon={BarChart3} label="View Reports" tone="emerald" />
+        <QuickAction to="/settings" icon={SettingsIcon} label="Configure Settings" tone="amber" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
