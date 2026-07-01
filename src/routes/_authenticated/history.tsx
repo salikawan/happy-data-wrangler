@@ -45,7 +45,7 @@ function History() {
   });
 
   const byDate = useMemo(() => {
-    const map = new Map<string, (typeof records)[number]>();
+    const map = new Map<string, NonNullable<typeof records>[number]>();
     records?.forEach((r) => map.set(r.date, r));
     return map;
   }, [records]);
