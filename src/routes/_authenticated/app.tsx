@@ -11,10 +11,11 @@ import { distanceMeters, getCurrentPosition, todayISO } from "@/lib/geo";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  CheckCircle2, Clock, LogIn, LogOut, MapPin, Users,
+  CheckCircle2, Clock, LogOut, MapPin, Users,
   CalendarCheck, Wallet, TrendingUp, UserPlus, Building2, BarChart3, Settings as SettingsIcon,
   Send, Target, ChevronRight,
 } from "lucide-react";
+
 
 
 export const Route = createFileRoute("/_authenticated/app")({
