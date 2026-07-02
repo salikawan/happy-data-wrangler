@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { EmployeeShell } from "@/components/EmployeeShell";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { SelfieCapture } from "@/components/SelfieCapture";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { distanceMeters, getCurrentPosition, todayISO } from "@/lib/geo";
 import { useState } from "react";
@@ -16,14 +16,15 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
-  head: () => ({ meta: [{ title: "Dashboard — Pasimo" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Paismo" }] }),
   component: AppPage,
 });
 
 function AppPage() {
   const { role, loading } = useCurrentUser();
   if (loading) return null;
-  return <AppShell>{role === "admin" ? <AdminDashboard /> : <EmployeeDashboard />}</AppShell>;
+  if (role === "admin") return <AppShell><AdminDashboard /></AppShell>;
+  return <EmployeeDashboard />;
 }
 
 // ============ Employee Dashboard ============
