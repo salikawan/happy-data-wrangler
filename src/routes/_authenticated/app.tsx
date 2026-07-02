@@ -165,53 +165,114 @@ function EmployeeDashboard() {
   const hasCheckedIn = !!today?.check_in_time;
   const hasCheckedOut = !!today?.check_out_time;
 
+  const { data: upcomingShift } = useQuery({
+    queryKey: ["upcoming-shift"],
+    queryFn: async () => {
+      const { data } = await supabase.from("shifts").select("*").order("created_at", { ascending: true }).limit(1).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: siteCount = 0 } = useQuery({
+    queryKey: ["locations-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("locations").select("*", { count: "exact", head: true });
+      return count ?? 0;
+    },
+  });
+
+  const firstName =
+    (user?.user_metadata?.full_name as string)?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "there";
+
   return (
     <EmployeeShell
       hero={{
-        title: `Hi, ${(user?.user_metadata?.full_name as string) || (user?.email?.split("@")[0] ?? "there")}!`,
-        subtitle: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
+        title: `Hi, ${firstName} 👋`,
+        subtitle: "Have a great day at work",
         showBell: true,
       }}
     >
-      {/* Today status pills */}
+      {/* 2x2 tile grid */}
       <div className="grid grid-cols-2 gap-3">
-        <StatusPill icon={LogIn} label="Check-in" time={today?.check_in_time} tint="bg-emerald-100 text-emerald-600" />
-        <StatusPill icon={LogOut} label="Check-out" time={today?.check_out_time} tint="bg-rose-100 text-rose-600" />
+        <DashTile to="/leave-requests" icon={CalendarCheck} label="Leave Requests" tint="bg-rose-100 text-rose-500" />
+        <DashTile to="/profile" icon={Wallet} label="Payslips" tint="bg-emerald-100 text-emerald-600" />
+        <DashTile to="/leave-requests" icon={Send} label="Payment Request" tint="bg-sky-100 text-sky-600" />
+        <DashTile to="/profile" icon={Target} label="Goals" tint="bg-amber-100 text-amber-600" />
       </div>
 
-      {today?.status && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Today's status:</span>
-          <StatusBadge status={today.status} />
-        </div>
-      )}
-
-      {/* Main action card */}
+      {/* Upcoming shift / clock in card */}
       <div className="rounded-2xl bg-card p-5 shadow-sm border">
-        <h2 className="font-semibold text-base">
-          {mode === "idle" && !hasCheckedIn && "Ready to check in?"}
-          {mode === "idle" && hasCheckedIn && !hasCheckedOut && "Ready to check out?"}
-          {mode === "idle" && hasCheckedOut && "You're done for today"}
-          {mode === "checkin" && "Take a check-in selfie"}
-          {mode === "checkout" && "Take a check-out selfie"}
-        </h2>
-        <div className="mt-4 space-y-3">
-          {mode === "idle" ? (
-            hasCheckedOut ? (
-              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
-                <CheckCircle2 className="h-4 w-4" /> Great work today!
+        {mode === "idle" ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-base">Upcoming Shift</h2>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                <MapPin className="h-3 w-3" /> {siteCount} {siteCount === 1 ? "site" : "sites"}
+              </span>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                <Clock className="h-5 w-5" />
               </div>
-            ) : !hasCheckedIn ? (
-              <Button className="w-full rounded-xl h-12" size="lg" onClick={() => setMode("checkin")}>
-                <LogIn /> Check in now
-              </Button>
-            ) : (
-              <Button className="w-full rounded-xl h-12" size="lg" onClick={() => setMode("checkout")}>
-                <LogOut /> Check out
-              </Button>
-            )
-          ) : (
-            <>
+              <div className="min-w-0">
+                <div className="font-semibold truncate">{upcomingShift?.name ?? "Standard 9-5"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {upcomingShift ? `${upcomingShift.start_time?.slice(0,5)} – ${upcomingShift.end_time?.slice(0,5)}` : "09:00 – 17:00"}
+                </div>
+              </div>
+            </div>
+
+            {today?.status && (
+              <div className="mt-3 flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Today:</span>
+                <StatusBadge status={today.status} />
+                {today?.check_in_time && (
+                  <span className="text-muted-foreground">
+                    · in {new Date(today.check_in_time).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}
+                  </span>
+                )}
+                {today?.check_out_time && (
+                  <span className="text-muted-foreground">
+                    · out {new Date(today.check_out_time).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div className="mt-4">
+              {hasCheckedOut ? (
+                <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <CheckCircle2 className="h-4 w-4" /> Great work today!
+                </div>
+              ) : !hasCheckedIn ? (
+                <Button
+                  size="lg"
+                  onClick={() => setMode("checkin")}
+                  className="w-full h-12 rounded-full text-white shadow-md"
+                  style={{ background: "linear-gradient(135deg, oklch(0.55 0.22 295), oklch(0.7 0.2 310))" }}
+                >
+                  <Clock className="h-4 w-4" /> Clock in <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={() => setMode("checkout")}
+                  className="w-full h-12 rounded-full text-white shadow-md"
+                  style={{ background: "linear-gradient(135deg, oklch(0.55 0.22 295), oklch(0.7 0.2 310))" }}
+                >
+                  <LogOut className="h-4 w-4" /> Clock out <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="font-semibold text-base">
+              {mode === "checkin" ? "Take a check-in selfie" : "Take a check-out selfie"}
+            </h2>
+            <div className="mt-4 space-y-3">
               <SelfieCapture onCapture={setSelfie} />
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setSelfie(null); setMode("idle"); }}>Cancel</Button>
@@ -223,48 +284,33 @@ function EmployeeDashboard() {
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> Your location will be captured
               </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Quick links */}
-      <div className="grid grid-cols-2 gap-3">
-        <QuickTile to="/history" icon={Clock} label="My Timesheets" tint="bg-sky-100 text-sky-600" />
-        <QuickTile to="/leave-requests" icon={CalendarCheck} label="Request Leave" tint="bg-violet-100 text-violet-600" />
+            </div>
+          </>
+        )}
       </div>
     </EmployeeShell>
   );
 }
 
-function StatusPill({ icon: Icon, label, time, tint }: {
-  icon: typeof Clock; label: string; time?: string | null; tint: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm border">
-      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="mt-3 text-xs text-muted-foreground">{label}</div>
-      <div className="text-lg font-bold">
-        {time ? new Date(time).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "—"}
-      </div>
-    </div>
-  );
-}
-
-function QuickTile({ to, icon: Icon, label, tint }: {
+function DashTile({ to, icon: Icon, label, tint }: {
   to: string; icon: typeof Clock; label: string; tint: string;
 }) {
   return (
-    <Link to={to} className="rounded-2xl bg-card p-4 shadow-sm border flex items-center gap-3 hover:border-primary transition-colors">
+    <Link
+      to={to}
+      className="rounded-2xl bg-card p-4 shadow-sm border hover:border-primary transition-colors flex flex-col gap-3 min-h-[110px]"
+    >
       <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
         <Icon className="h-5 w-5" />
       </div>
-      <div className="font-medium text-sm">{label}</div>
+      <div>
+        <div className="font-semibold text-sm leading-tight">{label}</div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">Tap to open</div>
+      </div>
     </Link>
   );
 }
+
 
 
 
