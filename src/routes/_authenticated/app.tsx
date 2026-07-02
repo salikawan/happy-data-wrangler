@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { EmployeeShell } from "@/components/EmployeeShell";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { SelfieCapture } from "@/components/SelfieCapture";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { distanceMeters, getCurrentPosition, todayISO } from "@/lib/geo";
 import { useState } from "react";
@@ -16,14 +16,15 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
-  head: () => ({ meta: [{ title: "Dashboard — Pasimo" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Paismo" }] }),
   component: AppPage,
 });
 
 function AppPage() {
   const { role, loading } = useCurrentUser();
   if (loading) return null;
-  return <AppShell>{role === "admin" ? <AdminDashboard /> : <EmployeeDashboard />}</AppShell>;
+  if (role === "admin") return <AppShell><AdminDashboard /></AppShell>;
+  return <EmployeeDashboard />;
 }
 
 // ============ Employee Dashboard ============
@@ -163,63 +164,47 @@ function EmployeeDashboard() {
   const hasCheckedOut = !!today?.check_out_time;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Today</h1>
-        <p className="text-sm text-muted-foreground">
-          {new Date().toLocaleDateString(undefined, {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatusCard
-          icon={LogIn}
-          label="Check-in"
-          time={today?.check_in_time}
-          done={hasCheckedIn}
-        />
-        <StatusCard
-          icon={LogOut}
-          label="Check-out"
-          time={today?.check_out_time}
-          done={hasCheckedOut}
-        />
+    <EmployeeShell
+      hero={{
+        title: `Hi, ${(user?.user_metadata?.full_name as string) || (user?.email?.split("@")[0] ?? "there")}!`,
+        subtitle: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
+        showBell: true,
+      }}
+    >
+      {/* Today status pills */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatusPill icon={LogIn} label="Check-in" time={today?.check_in_time} tint="bg-emerald-100 text-emerald-600" />
+        <StatusPill icon={LogOut} label="Check-out" time={today?.check_out_time} tint="bg-rose-100 text-rose-600" />
       </div>
 
       {today?.status && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Status:</span>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Today's status:</span>
           <StatusBadge status={today.status} />
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {mode === "idle" && !hasCheckedIn && "Ready to check in?"}
-            {mode === "idle" && hasCheckedIn && !hasCheckedOut && "Ready to check out?"}
-            {mode === "idle" && hasCheckedOut && "You're done for today"}
-            {mode === "checkin" && "Take a check-in selfie"}
-            {mode === "checkout" && "Take a check-out selfie"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Main action card */}
+      <div className="rounded-2xl bg-card p-5 shadow-sm border">
+        <h2 className="font-semibold text-base">
+          {mode === "idle" && !hasCheckedIn && "Ready to check in?"}
+          {mode === "idle" && hasCheckedIn && !hasCheckedOut && "Ready to check out?"}
+          {mode === "idle" && hasCheckedOut && "You're done for today"}
+          {mode === "checkin" && "Take a check-in selfie"}
+          {mode === "checkout" && "Take a check-out selfie"}
+        </h2>
+        <div className="mt-4 space-y-3">
           {mode === "idle" ? (
             hasCheckedOut ? (
-              <div className="flex items-center gap-2 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
                 <CheckCircle2 className="h-4 w-4" /> Great work today!
               </div>
             ) : !hasCheckedIn ? (
-              <Button className="w-full" size="lg" onClick={() => setMode("checkin")}>
-                <LogIn /> Check in
+              <Button className="w-full rounded-xl h-12" size="lg" onClick={() => setMode("checkin")}>
+                <LogIn /> Check in now
               </Button>
             ) : (
-              <Button className="w-full" size="lg" onClick={() => setMode("checkout")}>
+              <Button className="w-full rounded-xl h-12" size="lg" onClick={() => setMode("checkout")}>
                 <LogOut /> Check out
               </Button>
             )
@@ -227,21 +212,9 @@ function EmployeeDashboard() {
             <>
               <SelfieCapture onCapture={setSelfie} />
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setSelfie(null);
-                    setMode("idle");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  disabled={!selfie || checkIn.isPending || checkOut.isPending}
-                  onClick={() => (mode === "checkin" ? checkIn.mutate() : checkOut.mutate())}
-                >
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setSelfie(null); setMode("idle"); }}>Cancel</Button>
+                <Button className="flex-1 rounded-xl" disabled={!selfie || checkIn.isPending || checkOut.isPending}
+                  onClick={() => (mode === "checkin" ? checkIn.mutate() : checkOut.mutate())}>
                   {mode === "checkin" ? "Confirm check-in" : "Confirm check-out"}
                 </Button>
               </div>
@@ -250,39 +223,48 @@ function EmployeeDashboard() {
               </p>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="grid grid-cols-2 gap-3">
+        <QuickTile to="/history" icon={Clock} label="My Timesheets" tint="bg-sky-100 text-sky-600" />
+        <QuickTile to="/leave-requests" icon={CalendarCheck} label="Request Leave" tint="bg-violet-100 text-violet-600" />
+      </div>
+    </EmployeeShell>
+  );
+}
+
+function StatusPill({ icon: Icon, label, time, tint }: {
+  icon: typeof Clock; label: string; time?: string | null; tint: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-card p-4 shadow-sm border">
+      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="mt-3 text-xs text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold">
+        {time ? new Date(time).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "—"}
+      </div>
     </div>
   );
 }
 
-function StatusCard({
-  icon: Icon,
-  label,
-  time,
-  done,
-}: {
-  icon: typeof Clock;
-  label: string;
-  time?: string | null;
-  done: boolean;
+function QuickTile({ to, icon: Icon, label, tint }: {
+  to: string; icon: typeof Clock; label: string; tint: string;
 }) {
   return (
-    <div className={`rounded-lg border bg-card p-4 ${done ? "" : "opacity-60"}`}>
-      <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4" /> {label}
+    <Link to={to} className="rounded-2xl bg-card p-4 shadow-sm border flex items-center gap-3 hover:border-primary transition-colors">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
+        <Icon className="h-5 w-5" />
       </div>
-      <div className="text-2xl font-semibold">
-        {time
-          ? new Date(time).toLocaleTimeString(undefined, {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "—"}
-      </div>
-    </div>
+      <div className="font-medium text-sm">{label}</div>
+    </Link>
   );
 }
+
+
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
