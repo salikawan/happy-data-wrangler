@@ -265,33 +265,6 @@ function QuickTile({ to, icon: Icon, label, tint }: {
 }
 
 
-function StatusCard({
-  icon: Icon,
-  label,
-  time,
-  done,
-}: {
-  icon: typeof Clock;
-  label: string;
-  time?: string | null;
-  done: boolean;
-}) {
-  return (
-    <div className={`rounded-lg border bg-card p-4 ${done ? "" : "opacity-60"}`}>
-      <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4" /> {label}
-      </div>
-      <div className="text-2xl font-semibold">
-        {time
-          ? new Date(time).toLocaleTimeString(undefined, {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "—"}
-      </div>
-    </div>
-  );
-}
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
