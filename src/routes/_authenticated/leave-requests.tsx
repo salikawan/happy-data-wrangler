@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { EmployeeShell } from "@/components/EmployeeShell";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +16,152 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/leave-requests")({
   head: () => ({ meta: [{ title: "Leave Requests — Paismo" }] }),
-  component: () => <AppShell><LeavePage /></AppShell>,
+  component: LeaveRoute,
 });
+
+function LeaveRoute() {
+  const { role, loading } = useCurrentUser();
+  if (loading) return null;
+  if (role === "admin") return <AppShell><LeavePage /></AppShell>;
+  return <EmployeeLeaves />;
+}
+
+function EmployeeLeaves() {
+  const { user } = useCurrentUser();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ leave_type: "Casual", from_date: "", to_date: "", reason: "" });
+
+  const { data: rows = [] } = useQuery({
+    queryKey: ["my-leaves", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leave_requests")
+        .select("*").eq("user_id", user!.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const stats = useMemo(() => {
+    const s = { approved: 0, pending: 0, rejected: 0 };
+    for (const r of rows) {
+      if (r.status === "approved") s.approved++;
+      else if (r.status === "pending") s.pending++;
+      else if (r.status === "rejected") s.rejected++;
+    }
+    return s;
+  }, [rows]);
+
+  const create = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not signed in");
+      if (!form.from_date || !form.to_date) throw new Error("Dates required");
+      const { error } = await supabase.from("leave_requests").insert({ ...form, user_id: user.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Leave request submitted");
+      setOpen(false);
+      setForm({ leave_type: "Casual", from_date: "", to_date: "", reason: "" });
+      qc.invalidateQueries({ queryKey: ["my-leaves"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <EmployeeShell hero={{ title: "My Leaves", subtitle: "Apply and track your time off" }}>
+      <div className="grid grid-cols-3 gap-3">
+        <LeaveStat value={stats.approved} label="Approved" tint="bg-emerald-100 text-emerald-700" />
+        <LeaveStat value={stats.pending} label="Pending" tint="bg-amber-100 text-amber-700" />
+        <LeaveStat value={stats.rejected} label="Rejected" tint="bg-rose-100 text-rose-700" />
+      </div>
+
+      <div className="space-y-3">
+        {rows.length === 0 && (
+          <div className="rounded-2xl bg-card border p-8 text-center text-sm text-muted-foreground">
+            No leave requests yet. Tap + to apply.
+          </div>
+        )}
+        {rows.map((r) => {
+          const tone = r.status === "approved" ? "bg-emerald-100 text-emerald-700"
+            : r.status === "rejected" ? "bg-rose-100 text-rose-700"
+            : "bg-amber-100 text-amber-700";
+          return (
+            <div key={r.id} className="rounded-2xl bg-card border shadow-sm p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold">{r.leave_type} Leave</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {new Date(r.from_date).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+                    {" – "}
+                    {new Date(r.to_date).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+                  </div>
+                  {r.reason && <div className="text-sm mt-2">{r.reason}</div>}
+                  <div className="text-[11px] text-muted-foreground mt-2">
+                    Applied {new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
+                  </div>
+                </div>
+                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize ${tone}`}>{r.status}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Floating action button */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <button
+            className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-xl transition-transform active:scale-95"
+            style={{ background: "linear-gradient(135deg, oklch(0.55 0.22 295), oklch(0.7 0.2 310))" }}
+            aria-label="New leave request"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New Leave Request</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="space-y-3">
+            <div>
+              <Label>Type</Label>
+              <Select value={form.leave_type} onValueChange={(v) => setForm({ ...form, leave_type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Casual">Casual</SelectItem>
+                  <SelectItem value="Sick">Sick</SelectItem>
+                  <SelectItem value="Annual">Annual</SelectItem>
+                  <SelectItem value="Unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>From</Label><Input type="date" value={form.from_date} onChange={(e) => setForm({ ...form, from_date: e.target.value })} /></div>
+              <div><Label>To</Label><Input type="date" value={form.to_date} onChange={(e) => setForm({ ...form, to_date: e.target.value })} /></div>
+            </div>
+            <div><Label>Reason</Label><Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></div>
+            <Button type="submit" className="w-full" disabled={create.isPending}>Submit</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </EmployeeShell>
+  );
+}
+
+function LeaveStat({ value, label, tint }: { value: number; label: string; tint: string }) {
+  return (
+    <div className="rounded-2xl bg-card border shadow-sm p-4 text-center">
+      <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${tint}`}>{value}</div>
+      <div className="mt-2 text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function dayCount(from: string, to: string) {
+  if (!from || !to) return 0;
+  const a = new Date(from), b = new Date(to);
+  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000) + 1);
+}
 
 function dayCount(from: string, to: string) {
   if (!from || !to) return 0;
