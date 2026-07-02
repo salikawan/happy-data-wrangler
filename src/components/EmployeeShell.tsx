@@ -44,7 +44,7 @@ export function EmployeeShell({
     <div className="min-h-screen bg-[oklch(0.98_0.005_300)] pb-32">
       {/* Purple gradient hero */}
       <div
-        className="relative px-5 pt-8 pb-20 text-white"
+        className="relative px-5 pt-5 pb-10 text-white"
         style={{
           background:
             "linear-gradient(135deg, oklch(0.55 0.22 295) 0%, oklch(0.62 0.24 300) 60%, oklch(0.7 0.2 310) 100%)",
@@ -52,9 +52,9 @@ export function EmployeeShell({
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{hero.title}</h1>
+            <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">{hero.title}</h1>
             {hero.subtitle && (
-              <p className="mt-1 truncate text-xs text-white/80 sm:text-sm">{hero.subtitle}</p>
+              <p className="mt-0.5 truncate text-[11px] text-white/80 sm:text-xs">{hero.subtitle}</p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -84,7 +84,7 @@ export function EmployeeShell({
       </div>
 
       {/* Content lifts over hero */}
-      <div className="-mt-12 px-4">
+      <div className="-mt-4 px-4">
         <div className="mx-auto max-w-2xl space-y-4">{children}</div>
       </div>
 
