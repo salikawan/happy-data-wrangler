@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import {
   CheckCircle2, Clock, LogIn, LogOut, MapPin, Users,
   CalendarCheck, Wallet, TrendingUp, UserPlus, Building2, BarChart3, Settings as SettingsIcon,
+  Send, Target, ChevronRight,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Dashboard — Paismo" }] }),
