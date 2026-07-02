@@ -157,17 +157,8 @@ function LeaveStat({ value, label, tint }: { value: number; label: string; tint:
   );
 }
 
-function dayCount(from: string, to: string) {
-  if (!from || !to) return 0;
-  const a = new Date(from), b = new Date(to);
-  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000) + 1);
-}
 
-function dayCount(from: string, to: string) {
-  if (!from || !to) return 0;
-  const a = new Date(from), b = new Date(to);
-  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000) + 1);
-}
+
 
 function LeavePage() {
   const { user, role } = useCurrentUser();
