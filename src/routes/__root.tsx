@@ -84,13 +84,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "GPS + selfie attendance tracking, geo-fencing and admin analytics for modern teams.",
       },
-      { property: "og:title", content: "Pasimo — Smart Attendance" },
+      { property: "og:title", content: "Pasimo — Smart Attendance & Workforce Management" },
       {
         property: "og:description",
         content: "GPS + selfie attendance tracking with admin analytics.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Pasimo — Smart Attendance & Workforce Management" },
+      { name: "description", content: "Attendence Software for modern agency" },
+      { property: "og:description", content: "Attendence Software for modern agency" },
+      { name: "twitter:description", content: "Attendence Software for modern agency" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0f49fea4-551d-4b50-af30-7eefe5053505" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0f49fea4-551d-4b50-af30-7eefe5053505" },
     ],
     links: [
       {
