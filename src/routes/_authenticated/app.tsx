@@ -72,23 +72,38 @@ function EmployeeDashboard() {
       const pos = await getCurrentPosition();
       const { latitude, longitude } = pos.coords;
 
-      if (
+      // Enforce that user is within ANY configured location's radius
+      const { data: locs, error: locErr } = await supabase
+        .from("locations")
+        .select("name, latitude, longitude, radius_meters");
+      if (locErr) throw locErr;
+
+      if (locs && locs.length > 0) {
+        let nearest = { name: "", dist: Infinity, radius: 0 };
+        for (const l of locs) {
+          const d = distanceMeters(latitude, longitude, l.latitude, l.longitude);
+          if (d - l.radius_meters < nearest.dist - nearest.radius) {
+            nearest = { name: l.name, dist: d, radius: l.radius_meters };
+          }
+        }
+        if (nearest.dist > nearest.radius) {
+          throw new Error(
+            `You must be inside a registered location to check in. Nearest: "${nearest.name}" — you're ${Math.round(nearest.dist)}m away (allowed ${nearest.radius}m).`,
+          );
+        }
+      } else if (
         settings?.enforce_geofence &&
         settings.allowed_lat != null &&
         settings.allowed_lng != null
       ) {
-        const dist = distanceMeters(
-          latitude,
-          longitude,
-          settings.allowed_lat,
-          settings.allowed_lng,
-        );
+        const dist = distanceMeters(latitude, longitude, settings.allowed_lat, settings.allowed_lng);
         if (dist > settings.allowed_radius_meters) {
           throw new Error(
             `You're ${Math.round(dist)}m away from allowed location (max ${settings.allowed_radius_meters}m).`,
           );
         }
       }
+
 
       const path = `${user.id}/${todayISO()}-checkin-${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage
