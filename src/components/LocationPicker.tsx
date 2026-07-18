@@ -159,6 +159,7 @@ export function LocationPicker({ value, onChange }: Props) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <Recenter lat={center[0]} lng={center[1]} />
+          <InvalidateOnMount />
           <ClickHandler onPick={updatePoint} />
           {value.latitude !== 0 && (
             <>
