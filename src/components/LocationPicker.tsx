@@ -35,6 +35,26 @@ function Recenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+function InvalidateOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const el = map.getContainer();
+    const fix = () => map.invalidateSize();
+    const t1 = setTimeout(fix, 0);
+    const t2 = setTimeout(fix, 200);
+    const t3 = setTimeout(fix, 600);
+    const ro = new ResizeObserver(fix);
+    ro.observe(el);
+    window.addEventListener("resize", fix);
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      ro.disconnect();
+      window.removeEventListener("resize", fix);
+    };
+  }, [map]);
+  return null;
+}
+
 function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
   useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) });
   return null;
@@ -139,6 +159,7 @@ export function LocationPicker({ value, onChange }: Props) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <Recenter lat={center[0]} lng={center[1]} />
+          <InvalidateOnMount />
           <ClickHandler onPick={updatePoint} />
           {value.latitude !== 0 && (
             <>
